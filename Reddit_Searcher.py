@@ -20,6 +20,8 @@ from os import path
               "user_agent": "same as user name on Reddit", 
               "username": "same as user name on Reddit",
               "password": "your Reddit password"}  
+    
+    Copyright 2020 PySimpleGUI
 """
 
 def make_search_row(item_number):
