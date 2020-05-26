@@ -82,7 +82,7 @@ def main():
             for v in values:
                 if len(v) == 2:
                     if v[0] == '-SEARCH STRING-':
-                        search_list.append((values[v], values[('-SEARCH REQUIRED-', v[1])]))
+                        search_list.append((values[v].lower(), values[('-SEARCH REQUIRED-', v[1])]))
             # Loop through the subs
             for sub_count, sub in enumerate(subs_to_read):
                 window['-OUT SUB-'].update(sub)
@@ -92,7 +92,7 @@ def main():
                 # Loop through submissions
                 for num, submission in enumerate(submissions):
                     opened = False
-                    text = ''.join([t for t in submission.selftext if ord(t) in range(65536)])
+                    text = ''.join([t.lower() for t in submission.selftext if ord(t) in range(65536)])
                     window['-PROG-'].update_bar(100 * (num + 1) // num_submissions)
                     title = ''.join([t for t in submission.title if ord(t) in range(65536)])
                     window['-NUM POSTS-'].update(num)
@@ -114,26 +114,31 @@ def main():
                             sg.popup_scrolled(f'Search found', submission.url, f'\nTITLE: {title}', str(text), title=title, non_blocking=True)
                     window['-OUT POST-'].update(str(title))
                     if values['-COMMENTS-']:  # if should also search comments
-                        comments = submission.comments
-                        for comment in comments:
+                        for comment in submission.comments:
                             found = False
                             for search_item in search_list:
-                                if search_item[0] and search_item[0] in comment.body:
-                                    found = True
-                                elif search_item[1]:
-                                    found = False
-                                    break
+                                try:
+                                    if search_item[0] and search_item[0] in comment.body.lower():
+                                        found = True
+                                    elif search_item[1]:
+                                        found = False
+                                        break
+                                except Exception as e:
+                                    print(f'Exception searching the comments:\n{e}')
                             if found:
                                 results[title] = submission.url
                                 window['-LISTBOX-'].update(list(results.keys()))
-                                comment = ''.join([t for t in comment.body if ord(t) in range(65536)])
+                                comment_text = ''.join([t for t in comment.body if ord(t) in range(65536)])
                                 if values['-BROWSER-'] and not opened:
                                     open_new_tab(submission.url)
                                     opened = True
                                 elif values['-POPUP-']:
-                                    sg.popup_scrolled(f'Search found in comment', submission.url, f'\nTITLE: {title}', comment, title=title, non_blocking=True)
+                                    sg.popup_scrolled(f'Search found in comment', submission.url, f'\nTITLE: {title}', comment_text, title=title, non_blocking=True)
                                 window.refresh()
                     event, values = window.read(timeout=0)
+                    if event == '-LISTBOX-':            # experimental - see if clicked on an item in the list while it's still being built
+                        url = results.get(values['-LISTBOX-'][0])
+                        if url: open_new_tab(url)
                     if event in (None, 'Exit'):
                         break
                 # Done processing the single sub, so update the total progress bar
@@ -148,8 +153,7 @@ def main():
             if event is None:
                 break
         if event == '+':
-            search_layout = [make_search_row(num_searches)]
-            window.extend_layout(window['-SEARCH FRAME-'], search_layout)
+            window.extend_layout(window['-SEARCH FRAME-'], [make_search_row(num_searches)])
             num_searches += 1
         if event == '-LISTBOX-':
             url = results.get(values['-LISTBOX-'][0])
