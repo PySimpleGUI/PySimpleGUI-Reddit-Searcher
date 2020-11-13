@@ -29,7 +29,8 @@ For security reasons, the credentials are not stored in the source code, but ins
     
 When you first start the program, it will figure out that you don't have any credentials defined and will show you this settings window:
    
-![image](https://user-images.githubusercontent.com/46163555/99123385-11f9b400-25ce-11eb-9829-d545b17fdf56.png)
+![image](https://user-images.githubusercontent.com/46163555/99124186-aca6c280-25cf-11eb-9aa2-0e8bbb696c00.png)
+
 
 You can also use the "Settings" button in the main window to bring up the settings window.  
 

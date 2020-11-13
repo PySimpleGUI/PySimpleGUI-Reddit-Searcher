@@ -40,7 +40,7 @@ def settings_window():
               ]
     layout += [[sg.Ok(), sg.Cancel()]]
 
-    event, values = sg.Window('Reddit Reader Settings', layout).read(close=True)
+    event, values = sg.Window('Reddit Reader Settings', layout, icon=reddit_icon).read(close=True)
 
     if event == 'Ok':
         settings['client_id'] = values['-CLIENT ID-']
