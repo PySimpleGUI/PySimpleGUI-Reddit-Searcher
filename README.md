@@ -2,7 +2,8 @@
 
 ## Search Your Favorite Reddit Subs
 
-![SNAG-0604](https://user-images.githubusercontent.com/46163555/72357642-4d2f0c00-36b9-11ea-895a-6c87060352dc.jpg)
+
+![image](https://user-images.githubusercontent.com/46163555/99123363-04dcc500-25ce-11eb-971b-fa5a7bbea999.png)
 
 
 
@@ -20,26 +21,26 @@ You will also need to install the PRAW package which provides the APIs for acces
 
 ## PRAW Credentials
 
-You must signup with Reddit to in oder to get own Reddit API credentials.
+You must signup with Reddit to in order to get own Reddit API credentials.
 
 To sign up go to - https://www.reddit.com/prefs/apps/ 
 
-For security reasons, the credentiaols are not stored in the course code, but instead a file named `praw.cfg` that has this format.
+For security reasons, the credentials are not stored in the source code, but instead in a "settings file".  The User Settings APIs were added to PySimpleGUI in Nov 2020 and are perfect for storing login credentials.  
     
-Store your praw credentials this file, located in the same folder as this program in this format:
+When you first start the program, it will figure out that you don't have any credentials defined and will show you this settings window:
+   
+![image](https://user-images.githubusercontent.com/46163555/99123385-11f9b400-25ce-11eb-9829-d545b17fdf56.png)
 
-```
-{ "client_id": "get from PRAW signup",
-"client_secret": "get from PRAW signup",
-"user_agent": "same as user name on Reddit", 
-"username": "same as user name on Reddit",
-"password": "your Reddit password"}  
-```
+You can also use the "Settings" button in the main window to bring up the settings window.  
+
+## Search History
+
+The items you search for are stored in the settings file as well.  This makes future searches easier as you can select the search term from a drop-down list instead of typing them in.
 
 
 ## Running
 
-Once the pacakges are installed, you only need to run the single Python file found in this repository - `Reddit_Searcher.py`
+Once the packages are installed, you only need to run the single Python file found in this repository - `Reddit_Searcher.py`
 
 When running on Windows, launching with `pythonw` instead of plain `python` will start the program without showing a console window.
 
@@ -47,6 +48,6 @@ When running on Windows, launching with `pythonw` instead of plain `python` will
 
 ## Hungry for more?
 
-If you want more examples like tthis one to help in creating your GUI, then be sure and check out the many programs found at http://Demos.PySimpleGUI.org. 
+If you want more examples like this one to help in creating your GUI, then be sure and check out the many programs found at http://Demos.PySimpleGUI.org. 
 
 ![logo500](https://user-images.githubusercontent.com/46163555/71866174-62150980-30d3-11ea-8a27-451849cd88ed.png)

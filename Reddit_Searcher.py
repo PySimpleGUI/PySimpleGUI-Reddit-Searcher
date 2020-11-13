@@ -1,8 +1,6 @@
 import PySimpleGUI as sg
 import praw  # The Reddit APIs
 from webbrowser import open_new_tab
-from json import load
-from os import path
 
 """
     Demo Reddit Searcher
@@ -14,34 +12,76 @@ from os import path
     is opened to the topic.
 
     NOTE - you must register with Reddit as a developer. https://www.reddit.com/prefs/apps/ 
-    Store your praw credentials in a file named praw.cfg located in the same folder as this program in this format:
-                { "client_id": "get from PRAW signup",
-              "client_secret": "get from PRAW signup",
-              "user_agent": "same as user name on Reddit", 
-              "username": "same as user name on Reddit",
-              "password": "your Reddit password"}  
-    
+    You can set these credentials using the "Settings Window".
+
     Copyright 2020 PySimpleGUI
 """
 
+settings = sg.UserSettings()
+
 def make_search_row(item_number):
-    search_layout = [sg.In(key=('-SEARCH STRING-', item_number)), sg.CB('Require', key=('-SEARCH REQUIRED-', item_number))]
+    search_layout = [sg.Combo(sorted(settings.get('-search string-', [])), settings['-last search-'], size=(45,1), k=('-SEARCH STRING-', item_number)),
+        # sg.In(key=('-SEARCH STRING-', item_number)),
+                     sg.CB('Require', key=('-SEARCH REQUIRED-', item_number))]
     return search_layout
 
+def settings_window():
+    def input_line(text, key, default):
+        return [sg.T(text, size=(15,1), justification='r'), sg.In(default, size=(20,1), k=key)]
+
+    layout = [[sg.T('Reddit PRAW Settings', font='default 15')],
+              [sg.T('Note - You must register with Reddit to obtain PRAW credentials')],
+              input_line('Client ID', '-CLIENT ID-', settings['client_id']),
+              input_line('Client Secret', '-CLIENT SECRET-', settings['client_secret']),
+              input_line('User Agent', '-USER AGENT-', settings['user_agent']),
+              input_line('Username', '-USERNAME-', settings['username']),
+              input_line('Password', '-PASSWORD-', settings['password']),
+              [sg.CB('Clear Search History', k='-CLEAR HISTORY-')],
+              ]
+    layout += [[sg.Ok(), sg.Cancel()]]
+
+    event, values = sg.Window('Reddit Reader Settings', layout).read(close=True)
+
+    if event == 'Ok':
+        settings['client_id'] = values['-CLIENT ID-']
+        settings['client_secret'] = values['-CLIENT SECRET-']
+        settings['user_agent'] = values['-USER AGENT-']
+        settings['username'] = values['-USERNAME-']
+        settings['password'] = values['-PASSWORD-']
+        if values['-CLEAR HISTORY-']:
+            settings['-search string-'] = []
+        return True
+
+    return False
+
+
 def main():
+    while True:
+        # reddit_praw_parameters = settings.get_dict()
+        reddit_praw_parameters = {'client_id' : settings['client_id'], 'client_secret':settings['client_secret'],
+                                  'user_agent' : settings['user_agent'], 'username' : settings['username'], 'password': settings['password']}
+        try:
+            reddit = praw.Reddit(**reddit_praw_parameters)
+            break
+        except Exception as e:
+            sg.popup('Problem with your settings file', e)
+            if not settings_window():
+                sg.popup_error('Must set settings before can continue')
+                exit()
+
     # Read your Reddit PRAW configuration from a json file
-    try:
-        with open(path.join(path.dirname(__file__), r'praw.cfg'), 'r') as f:
-            reddit_praw_parameters = load(f)
-    except:
-        sg.popup_error('Failed loading the Reddit API login credential file.', 'The File should be named:', path.join(path.dirname(__file__), r'praw.cfg'))
-        exit()
+    # try:
+    #     with open(path.join(path.dirname(__file__), r'praw.cfg'), 'r') as f:
+    #         reddit_praw_parameters = load(f)
+    # except:
+    #     sg.popup_error('Failed loading the Reddit API login credential file.', 'The File should be named:', path.join(path.dirname(__file__), r'praw.cfg'))
+    #     exit()
     # To use the Reddit APIs you will need to sign up by visiting this site:
     # https://www.reddit.com/prefs/apps/
     # You will receive a client_id and client_secret string that you can
     # enter along with your normal Reddit ID & Password and save into a file named praw.cfg
 
-    sub_names = ('Python', 'learnpython', 'learnprogramming', 'PySimpleGUI', 'AskProgramming', 'Coding', 'Programming', 'learnmachinelearning', 'MLQuestions', 'datascience', 'MachineLearning', 'pythontips', 'pystats', 'pythoncoding', 'pythondev', 'scipy')
+    sub_names = ('Python', 'learnpython', 'learnprogramming', 'PySimpleGUI', 'madeinpython', 'AskProgramming', 'Coding', 'Programming', 'learnmachinelearning', 'MLQuestions', 'datascience', 'MachineLearning', 'pythontips', 'pystats', 'pythoncoding', 'pythondev', 'scipy')
 
     sg.theme('Dark Red')
     num_searches = 1
@@ -51,10 +91,10 @@ def main():
               [sg.Frame('Choose Subs',
                   [[sg.Listbox(sub_names, size=(25, 7), select_mode=sg.SELECT_MODE_MULTIPLE, key='-SUBS-')]]),
               sg.Frame('Options',
-                        [[sg.Checkbox('Look in Comments', key='-COMMENTS-')],
+                        [[sg.Checkbox('Look in Comments', True, key='-COMMENTS-')],
                          [sg.Checkbox('Show finds in browser', key='-BROWSER-')],
                          [sg.Checkbox('Show popup', key='-POPUP-')],
-                         [sg.Text('Limit: '), sg.Spin(list(range(100, 5000)), size=(4, 1), key='-LIMIT-')]])],
+                         [sg.Text('Limit: '), sg.Spin(list(range(200, 5000)), size=(4, 1), key='-LIMIT-')]])],
               [sg.Frame('Search Terms', search_layout, key='-SEARCH FRAME-' )],
               [sg.Frame('Status',[
                   [sg.Text('Reading Sub:'), sg.Text(size=(25, 1), key='-OUT SUB-')],
@@ -64,25 +104,32 @@ def main():
                   [sg.T('Overall Progress', size=(12,1)),sg.ProgressBar(100, orientation='horizontal', size=(30, 20), key='-PROG-TOTAL-')],])],
                 [sg.Frame('Results (Click to Lauch in Browser)',
                   [[sg.Listbox([], size=(60,10), key='-LISTBOX-', enable_events=True)]])],
-              [sg.Button('Start Search'), sg.Button('Exit')], ]
+              [sg.Button('Start Search', bind_return_key=True), sg.B('Settings'), sg.Button('Exit')], ]
 
     window = sg.Window('Reddit Reader', layout, icon=reddit_icon, use_default_focus=False)
 
-    reddit = praw.Reddit(**reddit_praw_parameters)
     results = {}
     while True:  # Event Loop
         event, values = window.read()
         if event in (None, 'Exit'):
             break
+        if event == 'Settings':
+            if settings_window():
+                reddit = praw.Reddit(**reddit_praw_parameters)
+
         subs_to_read = values['-SUBS-']
         if event.startswith('Start'):
             window['-LISTBOX-'].update([''])
             results = {}
             search_list = []    # make a list of tuples (search term, bool required)
             for v in values:
-                if len(v) == 2:
+                if isinstance(v, tuple):     # if value is a tuple
                     if v[0] == '-SEARCH STRING-':
                         search_list.append((values[v].lower(), values[('-SEARCH REQUIRED-', v[1])]))
+                        settings['-search string-'] = list(set(settings.get('-search string-', []) + [values['-SEARCH STRING-', v[1]], ]))
+            settings['-last search-'] = search_list[0][0]
+            print('last search = ', settings['-last search-'])
+            print('Search list = ', search_list)
             # Loop through the subs
             for sub_count, sub in enumerate(subs_to_read):
                 window['-OUT SUB-'].update(sub)
@@ -158,6 +205,7 @@ def main():
         if event == '-LISTBOX-':
             url = results.get(values['-LISTBOX-'][0])
             if url: open_new_tab(url)
+
 
     window.close()
 
